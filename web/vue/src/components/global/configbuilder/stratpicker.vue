@@ -8,7 +8,7 @@
         .custom-select.button
           select(v-model='strategy')
             option(v-for='strat in strategies') {{ strat.name }}
-      div
+      div(style='display:none;')
         label(for='candleSize') Candle Size
         .grd-row
           .grd-row-col-3-6
@@ -20,7 +20,7 @@
                 option hours
                 option days
       div
-        label(for='historySize') Warmup period (in {{ rawCandleSize }} {{ singularCandleSizeUnit }} candles):
+        label(for='historySize') Warmup period (in {{ humanizeDuration(candleSize * 1000 * 60) }} candles):
         input(v-model='historySize')
         em.label-like (will use {{ humanizeDuration(candleSize * historySize * 1000 * 60) }} of data as history)
     .grd-row-col-2-6.px1
@@ -37,6 +37,7 @@ import _ from 'lodash'
 import { get } from '../../../tools/ajax'
 
 export default {
+  props: ['candleSize'],
   data: () => {
     return {
       strategies: [],
@@ -75,19 +76,19 @@ export default {
 
       this.emitConfig();
     },
-    candleSize: function() { this.emitConfig() },
+    // candleSize: function() { this.emitConfig() },
     historySize: function() { this.emitConfig() },
     rawStratParams: function() { this.emitConfig() }
   },
   computed: {
-    candleSize: function() {
-       if(this.candleSizeUnit === 'minutes')
-        return this.rawCandleSize;
-      else if(this.candleSizeUnit === 'hours')
-        return this.rawCandleSize * 60;
-      else if(this.candleSizeUnit === 'days')
-        return this.rawCandleSize * 60 * 24;
-    },
+    // candleSize: function() {
+    //    if(this.candleSizeUnit === 'minutes')
+    //     return this.rawCandleSize;
+    //   else if(this.candleSizeUnit === 'hours')
+    //     return this.rawCandleSize * 60;
+    //   else if(this.candleSizeUnit === 'days')
+    //     return this.rawCandleSize * 60 * 24;
+    // },
     singularCandleSizeUnit: function() {
       // hours -> hour
       return this.candleSizeUnit.slice(0, -1);

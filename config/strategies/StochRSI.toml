@@ -1,4 +1,4 @@
-interval = 3
+Pinterval = 3
 
 [thresholds]
 low = 20

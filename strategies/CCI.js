@@ -2,13 +2,18 @@
 var _ = require('lodash');
 var log = require('../core/log.js');
 
+// configuration
+var config = require('../core/util.js').getConfig();
+var settings = config.CCI;
+var pposettings = config.PPO;
+
 // let's create our own method
 var method = {};
 
 // prepare everything our method needs
 method.init = function() {
   this.currentTrend;
-  this.requiredHistory = this.tradingAdvisor.historySize;
+  this.requiredHistory = config.tradingAdvisor.historySize;
 
   this.age = 0;
   this.trend = {
@@ -17,15 +22,15 @@ method.init = function() {
     persisted: false,
     adviced: false
   };
-  this.historySize = this.settings.history;
+  this.historySize = config.tradingAdvisor.historySize;
   this.ppoadv = 'none';
-  this.uplevel = this.settings.thresholds.up;
-  this.downlevel = this.settings.thresholds.down;
-  this.persisted = this.settings.thresholds.persistence;
+  this.uplevel = settings.thresholds.up;
+  this.downlevel = settings.thresholds.down;
+  this.persisted = settings.thresholds.persistence;
 
   // log.debug("CCI started with:\nup:\t", this.uplevel, "\ndown:\t", this.downlevel, "\npersistence:\t", this.persisted);
   // define the indicators we need
-  this.addIndicator('cci', 'CCI', this.settings);
+  this.addIndicator('cci', 'CCI', settings);
 }
 
 // what happens on every new candle?
@@ -34,7 +39,7 @@ method.update = function(candle) {
 
 // for debugging purposes: log the last calculated
 // EMAs and diff.
-method.log = function(candle) {
+method.log = function() {
     var cci = this.indicators.cci;
     if (typeof(cci.result) == 'boolean') {
         log.debug('Insufficient data available. Age: ', cci.size, ' of ', cci.maxSize);
@@ -43,22 +48,22 @@ method.log = function(candle) {
     }
 
     log.debug('calculated CCI properties for candle:');
-    log.debug('\t', 'Price:\t\t', candle.close.toFixed(8));
+    log.debug('\t', 'Price:\t\t\t', this.lastPrice);
     log.debug('\t', 'CCI tp:\t', cci.tp.toFixed(8));
     log.debug('\t', 'CCI tp/n:\t', cci.TP.result.toFixed(8));
     log.debug('\t', 'CCI md:\t', cci.mean.toFixed(8));
     if (typeof(cci.result) == 'boolean' )
         log.debug('\t In sufficient data available.');
     else
-        log.debug('\t', 'CCI:\t\t', cci.result.toFixed(2));
+        log.debug('\t', 'CCI:\t', cci.result.toFixed(2));
 }
 
 /*
- *
+ * 
  */
 method.check = function(candle) {
 
-    var lastPrice = candle.close;
+  var price = candle.close;
 
     this.age++;
     var cci = this.indicators.cci;
@@ -115,7 +120,7 @@ method.check = function(candle) {
             }
             this.advice();
         }
-
+                
     } else {
         this.advice();
     }

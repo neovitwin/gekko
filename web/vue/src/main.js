@@ -21,7 +21,7 @@ import singleWatcher from './components/gekko/singleWatcher.vue'
 import { connect as connectWS } from './components/global/ws'
 
 const router = new VueRouter({
-  mode: 'hash',
+  mode: 'history',
   base: __dirname,
   routes: [
     { path: '/', redirect: '/home' },

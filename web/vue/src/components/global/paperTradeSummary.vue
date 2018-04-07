@@ -14,9 +14,12 @@
       th final balance
       td {{ round(report.balance) }} {{ report.currency }}
     tr
+      th profit based on trades
+      td {{ round2(report.relativeProfitPerTrades) }}%
+    tr
       th simulated profit
 
-  .big.txt--right.price(:class='profitClass') {{ round(report.relativeProfit) }}%
+  .big.txt--right.price(:class='profitClass') {{ round2(report.relativeProfit) }}%
 
 </template>
 
@@ -58,7 +61,7 @@ export default {
 }
 
 .price.loss {
-  color: red;
+  color: #ff3300;
 }
 
 </style>

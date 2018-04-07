@@ -4,12 +4,12 @@
     .hr
     h2 Available datasets
     .txt--center.my2(v-if='datasetScanstate === "idle"')
-      a.w100--s.btn--primary.scan-btn(href='#', v-on:click.prevent='scan') Scan available data
+      a.w100--s.btn--blue.scan-btn(href='#', v-on:click.prevent='scan') scan available data
     .txt--center.my2(v-if='datasetScanstate === "scanning"')
       spinner
     .my2(v-if='datasetScanstate === "scanned"')
       .bg--orange.p1.warning.my1(v-if='unscannableMakets.length')
-        p.clickable(v-if='!viewUnscannable', v-on:click.prevent='toggleUnscannable') Some markets were unscannable, click here for details.
+        p.clickable(v-if='!viewUnscannable', v-on:click.prevent='toggleUnscannable') Some markets where unscannable, click here for details.
         template(v-if='viewUnscannable')
           p Unable to find datasets in the following markets:
           .mx2(v-for='market in unscannableMakets')
@@ -37,7 +37,7 @@
     .my2
       h2 Import more data
       p.text You can easily import more market data directly from exchanges using the importer.
-      router-link.btn--primary(to='/data/importer') Go to the importer!
+      router-link(to='/data/importer') Go to the importer!
 </template>
 
 <script>
@@ -92,8 +92,7 @@ table.full td {
 }
 
 table.full.data th {
-  text-align: left;
-  padding: 0.5rem 0;
+  text-align: center;
 }
 
 .warning p {

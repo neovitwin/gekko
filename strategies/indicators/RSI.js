@@ -9,7 +9,7 @@ var Indicator = function (settings) {
   this.avgD = new SMMA(this.weight);
   this.u = 0;
   this.d = 0;
-  this.rs = 0;
+  this.rsi = 0;
   this.result = 0;
   this.age = 0;
 }
@@ -37,8 +37,8 @@ Indicator.prototype.update = function (candle) {
   this.avgU.update(this.u);
   this.avgD.update(this.d);
 
-  this.rs = this.avgU.result / this.avgD.result;
-  this.result = 100 - (100 / (1 + this.rs));
+  this.rsi = this.avgU.result / this.avgD.result;
+  this.result = 100 - (100 / (1 + this.rsi));
 
   if (this.avgD.result === 0 && this.avgU.result !== 0) {
     this.result = 100;

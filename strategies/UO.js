@@ -2,6 +2,9 @@
 var _ = require('lodash');
 var log = require('../core/log.js');
 
+var config = require('../core/util.js').getConfig();
+var settings = config.UO;
+
 var UO = require('./indicators/UO.js');
 
 // let's create our own method
@@ -18,13 +21,13 @@ method.init = function() {
     adviced: false
   };
 
-  this.requiredHistory = this.tradingAdvisor.historySize;
+  this.requiredHistory = config.tradingAdvisor.historySize;
 
   // define the indicators we need
-  this.addIndicator('uo', 'UO', this.settings);
+  this.addIndicator('uo', 'UO', settings);
 }
 
-// for debugging purposes log the last
+// for debugging purposes log the last 
 // calculated parameters.
 method.log = function(candle) {
   var digits = 8;
@@ -39,7 +42,7 @@ method.check = function() {
   var uo = this.indicators.uo;
   var uoVal = uo.uo;
 
-  if(uoVal > this.settings.thresholds.high) {
+  if(uoVal > settings.thresholds.high) {
 
     // new trend detected
     if(this.trend.direction !== 'high')
@@ -54,7 +57,7 @@ method.check = function() {
 
     log.debug('In high since', this.trend.duration, 'candle(s)');
 
-    if(this.trend.duration >= this.settings.thresholds.persistence)
+    if(this.trend.duration >= settings.thresholds.persistence)
       this.trend.persisted = true;
 
     if(this.trend.persisted && !this.trend.adviced) {
@@ -62,8 +65,8 @@ method.check = function() {
       this.advice('short');
     } else
       this.advice();
-
-  } else if(uoVal < this.settings.thresholds.low) {
+    
+  } else if(uoVal < settings.thresholds.low) {
 
     // new trend detected
     if(this.trend.direction !== 'low')
@@ -78,7 +81,7 @@ method.check = function() {
 
     log.debug('In low since', this.trend.duration, 'candle(s)');
 
-    if(this.trend.duration >= this.settings.thresholds.persistence)
+    if(this.trend.duration >= settings.thresholds.persistence)
       this.trend.persisted = true;
 
     if(this.trend.persisted && !this.trend.adviced) {

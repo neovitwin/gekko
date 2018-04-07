@@ -15,7 +15,6 @@ var strat = {};
 
 // Prepare everything our method needs
 strat.init = function() {
-  this.input = 'candle';
   this.currentTrend = 'long';
   this.requiredHistory = 0;
 }

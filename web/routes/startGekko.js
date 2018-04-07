@@ -4,7 +4,6 @@ const moment = require('moment');
 
 const pipelineRunner = promisify(require('../../core/workers/pipeline/parent'));
 const cache = require('../state/cache');
-const Logger = require('../state/logger');
 const broadcast = cache.get('broadcast');
 const apiKeyManager= cache.get('apiKeyManager');
 const gekkoManager = cache.get('gekkos');
@@ -50,15 +49,6 @@ module.exports = function *() {
 
   let errored = false;
 
-  var logType = type;
-  if(logType === 'leech') {
-    if(config.trader && config.trader.enabled)
-      logType = 'tradebot';
-    else
-      logType = 'papertrader';
-  }
-  const logger = new Logger(logType);
-
   console.log('Gekko', id, 'started');
 
   const child = pipelineRunner(mode, config, (err, event) => {
@@ -83,10 +73,7 @@ module.exports = function *() {
       });
     }
 
-    if(event && event.log)
-      return logger.write(event.log);
-
-    if(!event || !event.type)
+    if(!event)
       return;
 
     if(event.type === 'trade') {
@@ -118,6 +105,7 @@ module.exports = function *() {
     }
 
     let updates = {};
+
 
     if(event.type === 'update') {
       updates.latest = event.latest;

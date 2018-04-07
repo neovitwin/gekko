@@ -1,5 +1,5 @@
 /*
-
+  
   RSI - cykedev 14/02/2014
 
   (updated a couple of times since, check git history)
@@ -8,6 +8,9 @@
 // helpers
 var _ = require('lodash');
 var log = require('../core/log.js');
+
+var config = require('../core/util.js').getConfig();
+var settings = config.RSI;
 
 var RSI = require('./indicators/RSI.js');
 
@@ -25,28 +28,36 @@ method.init = function() {
     adviced: false
   };
 
-  this.requiredHistory = this.tradingAdvisor.historySize;
+  this.requiredHistory = config.tradingAdvisor.historySize;
 
   // define the indicators we need
-  this.addIndicator('rsi', 'RSI', this.settings);
+  this.addIndicator('rsi', 'RSI', settings);
+
+  this.lastTransaction = 0;
+  this.delay = settings.delay;
+  this.lastBuyPrice = 0;
+  this.startPrice = 100;
 }
 
-// for debugging purposes log the last
+// for debugging purposes log the last 
 // calculated parameters.
 method.log = function(candle) {
   var digits = 8;
   var rsi = this.indicators.rsi;
 
   log.debug('calculated RSI properties for candle:');
-  log.debug('\t', 'rsi:', rsi.result.toFixed(digits));
+  log.debug('\t', 'rsi:', rsi.rsi.toFixed(digits));
   log.debug('\t', 'price:', candle.close.toFixed(digits));
 }
 
-method.check = function() {
+method.check = function(candle) {
+  let price = candle.close;
   var rsi = this.indicators.rsi;
   var rsiVal = rsi.result;
 
-  if(rsiVal > this.settings.thresholds.high) {
+  this.lastTransaction++;
+
+  if(rsiVal > settings.thresholds.high) {
 
     // new trend detected
     if(this.trend.direction !== 'high')
@@ -59,18 +70,25 @@ method.check = function() {
 
     this.trend.duration++;
 
-    log.debug('In high since', this.trend.duration, 'candle(s)');
+    // console.log('In high since', this.trend.duration, 'candle(s) - Persistance', settings.thresholds.persistence, ' last buy@', this.lastBuyPrice);
 
-    if(this.trend.duration >= this.settings.thresholds.persistence)
+    if(this.trend.duration >= settings.thresholds.persistence)
       this.trend.persisted = true;
 
-    if(this.trend.persisted && !this.trend.adviced) {
+    if(this.trend.persisted /*&& !this.trend.adviced */&&  price >= this.lastBuyPrice*1.01 && this.lastBuyPrice != 0) {
+      // console.log('Selling@ ', price, ', Buy Price@ ', this.lastBuyPrice);
       this.trend.adviced = true;
       this.advice('short');
-    } else
+      this.startPrice *= price/this.lastBuyPrice;
+      //this.profit += price - this.lastBuyPrice  - 0.0015*(price+this.lastBuyPrice) ;
+      console.log('profit' , (price/this.lastBuyPrice - 1) * 100, '% profit = ', this.startPrice);
+      this.lastBuyPrice = 0;
+      this.lastTransaction = 0;
+    }
+    else
       this.advice();
-
-  } else if(rsiVal < this.settings.thresholds.low) {
+    
+  } else if(rsiVal < settings.thresholds.low) {
 
     // new trend detected
     if(this.trend.direction !== 'low')
@@ -83,15 +101,22 @@ method.check = function() {
 
     this.trend.duration++;
 
-    log.debug('In low since', this.trend.duration, 'candle(s)');
+    // console.log('In low since', this.trend.duration, 'candle(s) - Persistance', settings.thresholds.persistence, ' last buy@', this.lastBuyPrice);
+    // console.log('rsiVal', rsiVal );
 
-    if(this.trend.duration >= this.settings.thresholds.persistence)
+    if(this.trend.duration >= settings.thresholds.persistence)
       this.trend.persisted = true;
 
-    if(this.trend.persisted && !this.trend.adviced) {
+
+
+    // console.log('transaction age', this.lastTransaction, ' delay ', this.delay);
+    if(this.trend.persisted /*&& !this.trend.adviced */&& (this.lastBuyPrice === 0) && (this.lastTransaction >= this.delay)) {
+      // console.log('Buying@ ', price);
       this.trend.adviced = true;
       this.advice('long');
-    } else
+      this.lastBuyPrice = price;
+    } 
+    else
       this.advice();
 
   } else {

@@ -21,7 +21,7 @@ method.init = function() {
    adviced: false
   };
 
-  this.requiredHistory = this.tradingAdvisor.historySize;
+  this.requiredHistory = config.tradingAdvisor.historySize;
 
   // define the indicators we need
   this.addIndicator('ppo', 'PPO', config.PPO);
@@ -33,14 +33,14 @@ method.update = function(candle) {
   // nothing!
 }
 
-// for debugging purposes log the last
+// for debugging purposes log the last 
 // calculated parameters.
 method.log = function(candle) {
   var digits = 8;
-  var ppo = this.indicators.ppo.result;
+  var ppo = this.indicators.ppo;
   var result = ppo.ppo;
-  var signal = ppo.PPOsignal;
-  var hist = ppo.PPOhist;
+  var signal = ppo.PPOsignal.result;
+  var hist = result - signal;
   var momentumResult = this.indicators[momentumName][momentumName];
 
   log.debug('\t', 'PPO:', result.toFixed(digits));
@@ -51,8 +51,10 @@ method.log = function(candle) {
 }
 
 method.check = function() {
-  var ppo = this.indicators.ppo.result;
-  var hist = ppo.PPOhist;
+  var ppo = this.indicators.ppo;
+  var result = ppo.ppo;
+  var signal = ppo.PPOsignal.result;
+  var hist = result - signal;
 
   var value = this.indicators[momentumName][momentumName];
 
@@ -84,7 +86,7 @@ method.check = function() {
       this.advice('long');
     } else
       this.advice();
-
+    
   } else if(value > thresholds.high) {
 
     // new trend detected
@@ -116,9 +118,9 @@ method.check = function() {
 
     // we're not in an up nor in a downtrend
     // but for now we ignore sideways trends
-    //
+    // 
     // read more @link:
-    //
+    // 
     // https://github.com/askmike/gekko/issues/171
 
     // this.trend = {

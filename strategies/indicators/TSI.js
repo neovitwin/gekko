@@ -5,10 +5,10 @@ var Indicator = function(settings) {
   this.input = 'candle';
   this.lastClose = null;
   this.tsi = 0;
-  this.inner = new EMA(settings.long);
-  this.outer = new EMA(settings.short);
-  this.absoluteInner = new EMA(settings.long);
-  this.absoluteOuter = new EMA(settings.short);
+  this.inner = new EMA(settings.weight);
+  this.outer = new EMA(settings.weight);
+  this.absoluteInner = new EMA(settings.weight);
+  this.absoluteOuter = new EMA(settings.weight);
 }
 
 Indicator.prototype.update = function(candle) {

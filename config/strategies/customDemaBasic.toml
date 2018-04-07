@@ -1,0 +1,14 @@
+weight = 12
+
+[thresholds]
+down = -0.025
+up = 0.025
+
+[dataPoints]
+uptrend = 10
+downtrend = 5
+
+[tolerance]
+percentage = 0.98
+age = 25
+persistence = 5

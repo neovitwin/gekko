@@ -1,5 +1,5 @@
 /*
-
+  
   MACD - DJM 31/12/2013
 
   (updated a couple of times since, check git history)
@@ -10,11 +10,16 @@
 var _ = require('lodash');
 var log = require('../core/log.js');
 
+// configuration
+var config = require('../core/util.js').getConfig();
+var settings = config.MACD;
+
 // let's create our own method
 var method = {};
 
 // prepare everything our method needs
 method.init = function() {
+
   // keep state about the current trend
   // here, on every new candle we use this
   // state object to check if we need to
@@ -28,10 +33,10 @@ method.init = function() {
 
   // how many candles do we need as a base
   // before we can start giving advice?
-  this.requiredHistory = this.tradingAdvisor.historySize;
+  this.requiredHistory = config.tradingAdvisor.historySize;
 
   // define the indicators we need
-  this.addIndicator('macd', 'MACD', this.settings);
+  this.addIndicator('macd', 'MACD', settings);
 }
 
 // what happens on every new candle?
@@ -59,7 +64,7 @@ method.log = function() {
 method.check = function() {
   var macddiff = this.indicators.macd.result;
 
-  if(macddiff > this.settings.thresholds.up) {
+  if(macddiff > settings.thresholds.up) {
 
     // new trend detected
     if(this.trend.direction !== 'up')
@@ -75,7 +80,7 @@ method.check = function() {
 
     log.debug('In uptrend since', this.trend.duration, 'candle(s)');
 
-    if(this.trend.duration >= this.settings.thresholds.persistence)
+    if(this.trend.duration >= settings.thresholds.persistence)
       this.trend.persisted = true;
 
     if(this.trend.persisted && !this.trend.adviced) {
@@ -84,7 +89,7 @@ method.check = function() {
     } else
       this.advice();
 
-  } else if(macddiff < this.settings.thresholds.down) {
+  } else if(macddiff < settings.thresholds.down) {
 
     // new trend detected
     if(this.trend.direction !== 'down')
@@ -100,7 +105,7 @@ method.check = function() {
 
     log.debug('In downtrend since', this.trend.duration, 'candle(s)');
 
-    if(this.trend.duration >= this.settings.thresholds.persistence)
+    if(this.trend.duration >= settings.thresholds.persistence)
       this.trend.persisted = true;
 
     if(this.trend.persisted && !this.trend.adviced) {
@@ -115,9 +120,9 @@ method.check = function() {
 
     // we're not in an up nor in a downtrend
     // but for now we ignore sideways trends
-    //
+    // 
     // read more @link:
-    //
+    // 
     // https://github.com/askmike/gekko/issues/171
 
     // this.trend = {

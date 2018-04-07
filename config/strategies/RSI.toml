@@ -1,4 +1,5 @@
 interval = 14
+delay = 5
 
 [thresholds]
 low = 30

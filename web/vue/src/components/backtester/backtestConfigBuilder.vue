@@ -2,7 +2,7 @@
 .contain
   dataset-picker.contain.my2(v-on:dataset='updateDataset')
   .hr
-  strat-picker.contain.my2(v-on:stratConfig='updateStrat')
+  strat-picker.contain.my2(v-on:stratConfig='updateStrat', :candleSize='candleSize')
   .hr
   paper-trader(v-on:settings='updatePaperTrader')
   .hr
@@ -14,7 +14,7 @@ import datasetPicker from '../global/configbuilder/datasetpicker.vue'
 import stratPicker from '../global/configbuilder/stratpicker.vue'
 import paperTrader from '../global/configbuilder/papertrader.vue'
 import _ from 'lodash'
-import { get } from '../../tools/ajax'
+import { get, post } from '../../tools/ajax'
 
 export default {
   created: function() {
@@ -28,7 +28,7 @@ export default {
       dataset: {},
       strat: {},
       paperTrader: {},
-      performanceAnalyzer: {}
+      performanceAnalyzer: {},
     }
   },
   components: {
@@ -37,6 +37,12 @@ export default {
     paperTrader
   },
   computed: {
+    candleSize: function() {
+      if (!this.strat.tradingAdvisor)
+        return 0;
+
+      return this.strat.tradingAdvisor.candleSize;
+    },
     market: function() {
       if(!this.dataset.exchange)
         return {};
@@ -68,8 +74,11 @@ export default {
             daterange: this.range
           }
         },
-        { performanceAnalyzer: this.performanceAnalyzer }
+        { performanceAnalyzer: this.performanceAnalyzer },
+        { dataset: this.dataset }
       );
+
+      console.log(config);
 
       config.valid = this.validConfig(config);
 
@@ -77,6 +86,7 @@ export default {
     }
   },
   methods: {
+    fmt: mom => moment.utc(mom).format('YYYY-MM-DD HH:mm'),
     validConfig: function(config) {
       if(!config.backtest)
         return false;
@@ -106,19 +116,23 @@ export default {
 
       return true;
     },
+
     updateDataset: function(set) {
       this.dataset = set;
+      this.strat.tradingAdvisor.candleSize = this.dataset.candleSize
       this.$emit('config', this.config);
     },
+
     updateStrat: function(sc) {
       this.strat = sc;
       this.$emit('config', this.config);
     },
+
     updatePaperTrader: function(pt) {
       this.paperTrader = pt;
       this.paperTrader.enabled = true;
       this.$emit('config', this.config);
-    },
+    }
   }
 }
 </script>

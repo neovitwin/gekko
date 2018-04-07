@@ -1,5 +1,5 @@
 /*
- * Linear regression curve
+ * Lineair regression curve
  */
 var log = require('../../core/log');
 
