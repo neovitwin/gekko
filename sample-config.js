@@ -1,5 +1,5 @@
 // Everything is explained here:
-// @link https://gekko.wizb.it/docs/commandline/plugins.html
+// @link https://github.com/askmike/gekko/blob/stable/docs/advanced_usage/plugins.md
 
 var config = {};
 
@@ -33,15 +33,21 @@ config.watch = {
 config.tradingAdvisor = {
   enabled: true,
   method: 'MACD',
-  candleSize: 60,
-  historySize: 10,
+  candleSize: 1,
+  historySize: 3,
+  adapter: 'sqlite',
+  talib: {
+    enabled: false,
+    version: '1.0.2'
+  }
 }
 
 // Exponential Moving Averages settings:
 config.DEMA = {
   // EMA weight (α)
   // the higher the weight, the more smooth (and delayed) the line
-  weight: 21,
+  short: 10,
+  long: 21,
   // amount of candles to remember and base initial EMAs on
   // the difference between the EMAs (to act as triggers)
   thresholds: {
@@ -194,9 +200,7 @@ config.paperTrader = {
     currency: 100,
   },
   // how much fee in % does each trade cost?
-  feeMaker: 0.15,
-  feeTaker: 0.25,
-  feeUsing: 'maker',
+  fee: 0.25,
   // how much slippage/spread should Gekko assume per trade?
   slippage: 0.05,
 }
@@ -214,8 +218,7 @@ config.trader = {
   key: '',
   secret: '',
   username: '', // your username, only required for specific exchanges.
-  passphrase: '', // GDAX, requires a passphrase.
-  orderUpdateDelay: 1, // Number of minutes to adjust unfilled order prices
+  passphrase: '' // GDAX, requires a passphrase.
 }
 
 config.adviceLogger = {
@@ -283,14 +286,6 @@ config.pushbullet = {
   tag: '[GEKKO]'
 };
 
-config.kodi = {
-  // if you have a username & pass, add it like below
-  // http://user:pass@ip-or-hostname:8080/jsonrpc
-  host: 'http://ip-or-hostname:8080/jsonrpc',
-  enabled: false,
-  sendMessageOnStart: true,
-}
-
 config.ircbot = {
   enabled: false,
   emitUpdates: false,
@@ -302,8 +297,10 @@ config.ircbot = {
 
 config.telegrambot = {
   enabled: false,
+  emitUpdates: false,
   token: 'YOUR_TELEGRAM_BOT_TOKEN',
-};
+  botName: 'gekkobot'
+}
 
 config.twitter = {
     // sends pushbullets if true
@@ -358,22 +355,6 @@ config.redisBeacon = {
   ]
 }
 
-config.slack = {
-  enabled: false,
-  token: '',
-  sendMessageOnStart: true,
-  muteSoft: true,
-  channel: '' // #tradebot
-}
-
-config.ifttt = {
-  enabled: false,
-  eventName: 'gekko',
-  makerKey: '',
-  muteSoft: true,
-  sendMessageOnStart: true
-}
-
 config.candleWriter = {
   enabled: false
 }
@@ -394,8 +375,6 @@ config.sqlite = {
 
   dataDirectory: 'history',
   version: 0.1,
-
-  journalMode: require('./web/isWindows.js') ? 'DELETE' : 'WAL',
 
   dependencies: []
 }
@@ -429,7 +408,7 @@ config.mongodb = {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // Note that these settings are only used in backtesting mode, see here:
-// @link: https://gekko.wizb.it/docs/commandline/backtesting.html
+// @link: https://github.com/askmike/gekko/blob/stable/docs/Backtesting.md
 
 config.backtest = {
   daterange: 'scan',
@@ -443,7 +422,7 @@ config.backtest = {
 config.importer = {
   daterange: {
     // NOTE: these dates are in UTC
-    from: "2017-11-01 00:00:00"
+    from: "2016-01-01 00:00:00"
   }
 }
 

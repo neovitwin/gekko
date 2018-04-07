@@ -1,9 +1,7 @@
 var _ = require('lodash');
-var fs = require('fs');
 var util = require('./util');
 var config = util.getConfig();
 var dirs = util.dirs();
-var moment = require('moment');
 
 var Checker = function() {
   _.bindAll(this);
@@ -19,11 +17,12 @@ Checker.prototype.notValid = function(conf) {
 Checker.prototype.getExchangeCapabilities = function(slug) {
   var capabilities;
 
-  if(!fs.existsSync(dirs.exchanges + slug + '.js'))
-    util.die(`Gekko does not know exchange "${slug}"`);
-
-  var Trader = require(dirs.exchanges + slug);
-  capabilities = Trader.getCapabilities();
+  try {
+    var Trader = require(dirs.exchanges + slug);
+    capabilities = Trader.getCapabilities();
+  } catch (e) {
+    capabilities = null;
+  }
 
   return capabilities;
 }
@@ -73,12 +72,6 @@ Checker.prototype.cantFetchFullHistory = function(conf) {
 
   if(!exchange.providesFullHistory)
     return 'The exchange ' + name + ' does not provide full history (or Gekko doesn\'t support importing it)';
-
-  if ("exchangeMaxHistoryAge" in exchange) {
-    if (moment(config.importer.daterange.from) < moment().subtract(exchange.exchangeMaxHistoryAge, "days")) {
-      return 'Unsupported date from! ' + exchange.name + ' supports history of max ' + exchange.exchangeMaxHistoryAge + ' days..';
-    }
-  }
 }
 
 // check if the exchange if configured correctly for real trading

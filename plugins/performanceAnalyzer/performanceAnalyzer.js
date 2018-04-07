@@ -7,6 +7,7 @@ const ENV = util.gekkoEnv();
 
 const config = util.getConfig();
 const perfConfig = config.performanceAnalyzer;
+const calcConfig = config.paperTrader;
 const watchConfig = config.watch;
 
 // Load the proper module that handles the results
@@ -38,10 +39,12 @@ const PerformanceAnalyzer = function() {
 
   this.roundTrips = [];
   this.roundTrip = {
-    id: 0,
     entry: false,
     exit: false
   }
+
+  this.previousBalance = 0;
+  this.lastBalance = 0;
 }
 
 PerformanceAnalyzer.prototype.processCandle = function(candle, done) {
@@ -75,27 +78,24 @@ PerformanceAnalyzer.prototype.processTrade = function(trade) {
 
 PerformanceAnalyzer.prototype.logRoundtripPart = function(trade) {
   // this is not part of a valid roundtrip
-  if(!this.roundTrip.entry && trade.action === 'sell') {
+  if(this.trades === 1 && trade.action === 'sell') {
     return;
   }
 
   if(trade.action === 'buy') {
-    if (this.roundTrip.exit) {
-      this.roundTrip.id++;
-      this.roundTrip.exit = false
-    }
-
     this.roundTrip.entry = {
       date: trade.date,
-      price: trade.price,
-      total: trade.portfolio.currency + (trade.portfolio.asset * trade.price),
+      price: this.price,
+      total: this.previousBalance? this.previousBalance : (calcConfig.simulationBalance.currency + (calcConfig.simulationBalance.asset*this.price)),
     }
   } else if(trade.action === 'sell') {
     this.roundTrip.exit = {
       date: trade.date,
-      price: trade.price,
-      total: trade.portfolio.currency + (trade.portfolio.asset * trade.price),
+      price: this.price,
+      total: this.current.currency,
     }
+    this.previousBalance = this.current.currency;
+    this.lastBalance = this.current.currency;
 
     this.handleRoundtrip();
   }
@@ -106,9 +106,7 @@ PerformanceAnalyzer.prototype.round = function(amount) {
 }
 
 PerformanceAnalyzer.prototype.handleRoundtrip = function() {
-  var roundtrip = {
-    id: this.roundTrip.id,
-
+  const roundtrip = {
     entryAt: this.roundTrip.entry.date,
     entryPrice: this.roundTrip.entry.price,
     entryBalance: this.roundTrip.entry.total,
@@ -123,9 +121,7 @@ PerformanceAnalyzer.prototype.handleRoundtrip = function() {
   roundtrip.pnl = roundtrip.exitBalance - roundtrip.entryBalance;
   roundtrip.profit = (100 * roundtrip.exitBalance / roundtrip.entryBalance) - 100;
 
-  this.roundTrips[this.roundTrip.id] = roundtrip;
-
-  // this will keep resending roundtrips, that is not ideal.. what do we do about it?
+  this.roundTrips.push(roundtrip);
   this.handler.handleRoundtrip(roundtrip);
 
   // we need a cache for sharpe
@@ -140,13 +136,14 @@ PerformanceAnalyzer.prototype.handleRoundtrip = function() {
 
 PerformanceAnalyzer.prototype.calculateReportStatistics = function() {
   // the portfolio's balance is measured in {currency}
-  let balance = this.current.currency + this.price * this.current.asset;
+  let balance = this.current.currency + this.price* this.current.asset;
   let profit = balance - this.start.balance;
 
   let timespan = moment.duration(
     this.dates.end.diff(this.dates.start)
   );
-  let relativeProfit = balance / this.start.balance * 100 - 100
+  let relativeProfit = balance / this.start.balance * 100 - 100;
+  let relativeProfitPerTrades = this.lastBalance? (this.lastBalance / this.start.balance * 100 - 100):relativeProfit;
 
   let report = {
     currency: this.currency,
@@ -160,6 +157,7 @@ PerformanceAnalyzer.prototype.calculateReportStatistics = function() {
     balance: balance,
     profit: profit,
     relativeProfit: relativeProfit,
+    relativeProfitPerTrades: relativeProfitPerTrades,
 
     yearlyProfit: this.round(profit / timespan.asYears()),
     relativeYearlyProfit: this.round(relativeProfit / timespan.asYears()),
@@ -176,10 +174,9 @@ PerformanceAnalyzer.prototype.calculateReportStatistics = function() {
   return report;
 }
 
-PerformanceAnalyzer.prototype.finalize = function(done) {
+PerformanceAnalyzer.prototype.finalize = function() {
   const report = this.calculateReportStatistics();
   this.handler.finalize(report);
-  done();
 }
 
 

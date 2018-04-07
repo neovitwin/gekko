@@ -1,20 +1,17 @@
 var _ = require('lodash');
 var config = require('../../core/util.js').getConfig();
 
-var sqlite = require('./handle');
+var handle = require('./handle');
 var sqliteUtil = require('./util');
-var util = require('../../core/util');
-var log = require('../../core/log');
 
 var Store = function(done, pluginMeta) {
   _.bindAll(this);
   this.done = done;
 
-  this.db = sqlite.initDB(false);
+  this.db = handle;
   this.db.serialize(this.upsertTables);
 
   this.cache = [];
-  this.buffered = util.gekkoMode() === "importer";
 }
 
 Store.prototype.upsertTables = function() {
@@ -52,60 +49,46 @@ Store.prototype.writeCandles = function() {
   if(_.isEmpty(this.cache))
     return;
 
-  var transaction = function() {
-    this.db.run("BEGIN TRANSACTION");
+  var stmt = this.db.prepare(`
+    INSERT OR IGNORE INTO ${sqliteUtil.table('candles')}
+    VALUES (?,?,?,?,?,?,?,?,?)
+  `);
 
-    var stmt = this.db.prepare(`
-      INSERT OR IGNORE INTO ${sqliteUtil.table('candles')}
-      VALUES (?,?,?,?,?,?,?,?,?)
-    `, function(err, rows) {
-        if(err) {
-          log.error(err);
-          return util.die('DB error at INSERT: '+ err);
-        }
-      });
+  _.each(this.cache, candle => {
+    stmt.run(
+      null,
+      candle.start.unix(),
+      candle.open,
+      candle.high,
+      candle.low,
+      candle.close,
+      candle.vwp,
+      candle.volume,
+      candle.trades
+    );
+  });
 
-    _.each(this.cache, candle => {
-      stmt.run(
-        null,
-        candle.start.unix(),
-        candle.open,
-        candle.high,
-        candle.low,
-        candle.close,
-        candle.vwp,
-        candle.volume,
-        candle.trades
-      );
-    });
+  stmt.finalize();
 
-    stmt.finalize();
-    this.db.run("COMMIT");
-    
-    this.cache = [];
-  }
-
-  this.db.serialize(_.bind(transaction, this));
+  this.cache = [];
 }
 
 var processCandle = function(candle, done) {
+
+  // because we might get a lot of candles
+  // in the same tick, we rather batch them
+  // up and insert them at once at next tick.
   this.cache.push(candle);
-  if (!this.buffered || this.cache.length > 1000) 
-    this.writeCandles();
+  _.defer(this.writeCandles);
 
+  // NOTE: sqlite3 has it's own buffering, at
+  // this point we are confident that the candle will
+  // get written to disk on next tick.
   done();
-};
-
-var finalize = function(done) {
-  this.writeCandles();
-  this.db.close(() => { done(); });
-  this.db = null;
 }
 
-if(config.candleWriter.enabled) {
+if(config.candleWriter.enabled)
   Store.prototype.processCandle = processCandle;
-  Store.prototype.finalize = finalize;
-}
 
 // TODO: add storing of trades / advice?
 

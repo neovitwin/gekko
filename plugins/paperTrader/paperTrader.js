@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const moment = require('moment');
 
 const util = require('../../core/util');
 const ENV = util.gekkoEnv();
@@ -10,7 +11,7 @@ const watchConfig = config.watch;
 const PaperTrader = function() {
   _.bindAll(this);
 
-  this.fee = 1 - (calcConfig['fee' + calcConfig.feeUsing.charAt(0).toUpperCase() + calcConfig.feeUsing.slice(1)] + calcConfig.slippage) / 100;
+  this.fee = 1 - (calcConfig.fee + calcConfig.slippage) / 100;
 
   this.currency = watchConfig.currency;
   this.asset = watchConfig.asset;
@@ -75,6 +76,7 @@ PaperTrader.prototype.updatePosition = function(advice) {
   // at the current price (minus fees)
   if(what === 'long') {
     this.portfolio.asset += this.extractFee(this.portfolio.currency / price);
+    this.portfolio.balance = this.portfolio.currency;
     this.portfolio.currency = 0;
     this.trades++;
   }

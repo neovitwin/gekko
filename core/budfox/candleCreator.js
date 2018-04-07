@@ -174,7 +174,7 @@ CandleCreator.prototype.addEmptyCandles = function(candles) {
   });
 
   while(start < end) {
-    start.add(1, 'm');
+    start.add('minute', 1);
     i = +start;
     j++;
 

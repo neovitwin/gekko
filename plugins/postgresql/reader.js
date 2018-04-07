@@ -6,25 +6,23 @@ var log = require(util.dirs().core + 'log');
 var handle = require('./handle');
 var postgresUtil = require('./util');
 
-const { Query } = require('pg');
-
 var Reader = function() {
   _.bindAll(this);
   this.db = handle;
 }
 
-// returns the furthest point (up to `from`) in time we have valid data from
+// returns the furtherst point (up to `from`) in time we have valid data from
 Reader.prototype.mostRecentWindow = function(from, to, next) {
   to = to.unix();
   from = from.unix();
 
   var maxAmount = to - from + 1;
 
-  var query = this.db.query(new Query(`
+  var query = this.db.query(`
   SELECT start from ${postgresUtil.table('candles')}
   WHERE start <= ${to} AND start >= ${from}
   ORDER BY start DESC
-  `), function (err, result) {
+  `, function (err, result) {
     if (err) {
       // bail out if the table does not exist
       if (err.message.indexOf(' does not exist') !== -1)
@@ -105,11 +103,11 @@ Reader.prototype.get = function(from, to, what, next) {
     what = '*';
   }
 
-  var query = this.db.query(new Query(`
+  var query = this.db.query(`
   SELECT ${what} from ${postgresUtil.table('candles')}
   WHERE start <= ${to} AND start >= ${from}
   ORDER BY start ASC
-  `));
+  `);
 
   var rows = [];
   query.on('row', function(row) {
@@ -122,10 +120,10 @@ Reader.prototype.get = function(from, to, what, next) {
 }
 
 Reader.prototype.count = function(from, to, next) {
-  var query = this.db.query(new Query(`
+  var query = this.db.query(`
   SELECT COUNT(*) as count from ${postgresUtil.table('candles')}
   WHERE start <= ${to} AND start >= ${from}
-  `));
+  `);
   var rows = [];
   query.on('row', function(row) {
     rows.push(row);
@@ -137,9 +135,9 @@ Reader.prototype.count = function(from, to, next) {
 }
 
 Reader.prototype.countTotal = function(next) {
-  var query = this.db.query(new Query(`
+  var query = this.db.query(`
   SELECT COUNT(*) as count from ${postgresUtil.table('candles')}
-  `));
+  `);
   var rows = [];
   query.on('row', function(row) {
     rows.push(row);
@@ -151,7 +149,7 @@ Reader.prototype.countTotal = function(next) {
 }
 
 Reader.prototype.getBoundry = function(next) {
-  var query = this.db.query(new Query(`
+  var query = this.db.query(`
   SELECT (
     SELECT start
     FROM ${postgresUtil.table('candles')}
@@ -163,7 +161,7 @@ Reader.prototype.getBoundry = function(next) {
     ORDER BY start DESC
     LIMIT 1
   ) as last
-  `));
+  `);
   var rows = [];
   query.on('row', function(row) {
     rows.push(row);

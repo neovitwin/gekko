@@ -45,8 +45,7 @@ Store.prototype.writeCandles = function() {
   var stmt = `
   INSERT INTO ${postgresUtil.table('candles')}
   (start, open, high,low, close, vwp, volume, trades)
-  select $1, $2, $3, $4, $5, $6, $7, $8
-  WHERE NOT EXISTS (select id from ${postgresUtil.table('candles')} where start=$1);
+  values($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING;
   `;
 
   _.each(this.cache, candle => {
@@ -66,22 +65,17 @@ Store.prototype.writeCandles = function() {
 }
 
 var processCandle = function(candle, done) {
+
+  // because we might get a lot of candles
+  // in the same tick, we rather batch them
+  // up and insert them at once at next tick.
   this.cache.push(candle);
-  if (this.cache.length > 1) 
-    this.writeCandles();
-
-  done();
-};
-
-var finalize = function(done) {
-  this.writeCandles();
-  this.db = null;
+  _.defer(this.writeCandles);
   done();
 }
 
-if(config.candleWriter.enabled) {
+if(config.candleWriter.enabled){
   Store.prototype.processCandle = processCandle;
-  Store.prototype.finalize = finalize;
 }
 
 module.exports = Store;

@@ -79,6 +79,25 @@ var cp = {
   //   profit: -0.2320439659276161,
   // }
   roundtrip: roundtrip => message('roundtrip', { roundtrip }),
+
+
+  // object like:
+  // {
+  //   name: "macd",
+  //   type: "MACD",
+  //   talib: true,
+  //   date: Moment<'2017-03-25 19:41:00'>,
+  //   result: 1.213
+  // }
+  indicatorResult: indicatorResult => message('indicatorResult', { indicatorResult }),
+
+  // object like:
+  // {
+  //   name: "DDEMA"
+  //   date: Moment<'2017-03-25 19:41:00'>,
+  //   result: 1.7
+  // }
+  strategyResult: strategyResult => message('strategyResult', { strategyResult }),
 }
 
 if(ENV !== 'child-process') {

@@ -33,7 +33,7 @@ Store.prototype.writeCandles = function writeCandles () {
   var candles = [];
   _.each(this.candleCache, candle => {
     var mCandle = {
-      time: moment().unix(),
+      time: moment().utc(),
       start: candle.start.unix(),
       open: candle.open,
       high: candle.high,
@@ -59,14 +59,7 @@ var processCandle = function processCandle (candle, done) {
   this.marketTime = candle.start;
 
   this.candleCache.push(candle);
-  if (this.candleCache.length > 100) 
-    this.writeCandles();
-  done();
-}
-
-var finalize = function(done) {
-  this.writeCandles();
-  this.db = null;
+  _.defer(this.writeCandles);
   done();
 }
 
@@ -77,7 +70,7 @@ var processAdvice = function processAdvice (advice) {
 
   log.debug(`Writing advice '${advice.recommendation}' to database.`);
   var mAdvice = {
-    time: moment().unix(),
+    time: moment().utc(),
     marketTime: this.marketTime,
     pair: this.pair,
     recommendation: advice.recommendation,
@@ -96,7 +89,6 @@ if (config.adviceWriter.enabled) {
 if (config.candleWriter.enabled) {
   log.debug('Enabling candleWriter.');
   Store.prototype.processCandle = processCandle;
-  Store.prototype.finalize = finalize;
 }
 
 module.exports = Store;

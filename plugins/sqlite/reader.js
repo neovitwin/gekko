@@ -3,12 +3,12 @@ var util = require('../../core/util.js');
 var config = util.getConfig();
 var log = require(util.dirs().core + 'log');
 
-var sqlite = require('./handle');
+var handle = require('./handle');
 var sqliteUtil = require('./util');
 
 var Reader = function() {
   _.bindAll(this);
-  this.db = sqlite.initDB(true);
+  this.db = handle;
 }
 
 
@@ -162,7 +162,6 @@ Reader.prototype.getBoundry = function(next) {
 }
 
 Reader.prototype.close = function() {
-  this.db.close();
   this.db = null;
 }
 

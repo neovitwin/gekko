@@ -84,14 +84,8 @@ var handleFetch = trades => {
   iterator.from.add(batchSize, 'minutes').subtract(overlapSize, 'minutes');
   iterator.to.add(batchSize, 'minutes').subtract(overlapSize, 'minutes');
 
-  if(!_.size(trades)) {
-    // fix https://github.com/askmike/gekko/issues/952
-    if(iterator.to.clone().add(batchSize * 4, 'minutes') > end) {
-      fetcher.emit('done');
-    }
-
+  if(!_.size(trades))
     return fetcher.emit('trades', []);
-  }
 
   var last = moment.unix(_.last(trades).date);
 

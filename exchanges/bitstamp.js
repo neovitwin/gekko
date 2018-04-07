@@ -2,7 +2,6 @@ var Bitstamp = require("bitstamp");
 var _ = require('lodash');
 var moment = require('moment');
 var log = require('../core/log');
-var util = require('../core/util');
 
 var Trader = function(config) {
   _.bindAll(this);
@@ -46,15 +45,8 @@ Trader.prototype.getPortfolio = function(callback) {
   var args = _.toArray(arguments);
   var set = function(err, data) {
 
-    if(data && data.error) {
-      err = data.error;
-    }
-
-    if(err) {
-      if(err.meta && err.meta.reason === 'API key not found')
-        util.die('Bitstamp says this API keys is invalid..');
-
-      log.error('BITSTAMP API ERROR:', err);
+    if(!_.isEmpty(data.error)) {
+      log.error('BITSTAMP API ERROR: ' + data.error);
       return this.retry(this.getPortfolio, args);
     }
 
@@ -87,9 +79,6 @@ Trader.prototype.getFee = function(callback) {
 }
 
 Trader.prototype.buy = function(amount, price, callback) {
-  var findMarket = function(pair) {
-    return pair.pair[0].toLowerCase() === this.currency && pair.pair[1].toLowerCase() === this.asset
-  }
   var args = _.toArray(arguments);
   var set = function(err, result) {
     if(err || result.status === "error") {
@@ -101,19 +90,22 @@ Trader.prototype.buy = function(amount, price, callback) {
   }.bind(this);
 
   //Decrease amount by 1% to avoid trying to buy more than balance allows.
-  amount = Number(amount * 0.99).toFixed(8);
+  amount -= amount / 100;
 
-  // Use proper precision by currency pair
-  var pair = _.find(Trader.getCapabilities().markets, _.bind(findMarket, this));
-  price = Number(Number.parseFloat(price).toFixed(pair.precision));
+  amount *= 100000000;
+  amount = Math.floor(amount);
+  amount /= 100000000;
+
+  // prevent:
+  // 'Ensure that there are no more than 2 decimal places.'
+  price *= 100;
+  price = Math.floor(price);
+  price /= 100;
 
   this.bitstamp.buy(this.market, amount, price, undefined, set);
 }
 
 Trader.prototype.sell = function(amount, price, callback) {
-  var findMarket = function(pair) {
-    return pair.pair[0].toLowerCase() === this.currency && pair.pair[1].toLowerCase() === this.asset
-  }
   var args = _.toArray(arguments);
   var set = function(err, result) {
     if(err || result.status === "error") {
@@ -126,11 +118,15 @@ Trader.prototype.sell = function(amount, price, callback) {
 
   // prevent:
   // 'Ensure that there are no more than 8 decimal places.'
-  amount = Number(Number.parseFloat(amount)).toFixed(8);
+  amount *= 100000000;
+  amount = Math.floor(amount);
+  amount /= 100000000;
 
-  // Use proper precision by currency pair
-  var pair = _.find(Trader.getCapabilities().markets, _.bind(findMarket, this));
-  price = Number(Number.parseFloat(price).toFixed(pair.precision));
+  // prevent:
+  // 'Ensure that there are no more than 2 decimal places.'
+  price *= 100;
+  price = Math.ceil(price);
+  price /= 100;
 
   this.bitstamp.sell(this.market, amount, price, undefined, set);
 }
@@ -163,7 +159,7 @@ Trader.prototype.getOrder = function(id, callback) {
       });
     }
 
-    var price = parseFloat( order[`${this.asset}_${this.currency}`] );
+    var price = parseFloat( order[this.market] );
     var amount = Math.abs(parseFloat( order[this.asset] ));
     var date = moment( order.datetime );
 
@@ -225,31 +221,14 @@ Trader.getCapabilities = function () {
   return {
     name: 'Bitstamp',
     slug: 'bitstamp',
-    currencies: ['USD', 'EUR', 'BTC'],
-    assets: ['BTC', 'BCH', 'EUR', 'LTC', 'ETH', 'XRP'],
+    currencies: ['USD', 'EUR'],
+    assets: ['BTC', 'EUR'],
     maxTradesAge: 60,
     maxHistoryFetch: null,
     markets: [
-      { pair: ['USD', 'EUR'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-
-      { pair: ['USD', 'BTC'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['EUR', 'BTC'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-
-      { pair: ['USD', 'BCH'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['EUR', 'BCH'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['BTC', 'BCH'], minimalOrder: { amount: 0.001, unit: 'currency'}, precision: 8  },
-
-      { pair: ['USD', 'XRP'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 5 },
-      { pair: ['EUR', 'XRP'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 5 },
-      { pair: ['BTC', 'XRP'], minimalOrder: { amount: 0.001, unit: 'currency'}, precision: 8  },
-
-      { pair: ['USD', 'LTC'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['EUR', 'LTC'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['BTC', 'LTC'], minimalOrder: { amount: 0.001, unit: 'currency'}, precision: 8  },
-
-      { pair: ['USD', 'ETH'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['EUR', 'ETH'], minimalOrder: { amount: 5, unit: 'currency' }, precision: 2 },
-      { pair: ['BTC', 'ETH'], minimalOrder: { amount: 0.001, unit: 'currency'}, precision: 8  },
+      { pair: ['USD', 'BTC'], minimalOrder: { amount: 5, unit: 'currency' } },
+      { pair: ['EUR', 'BTC'], minimalOrder: { amount: 5, unit: 'currency' } },
+      { pair: ['USD', 'EUR'], minimalOrder: { amount: 5, unit: 'currency' } }
     ],
     requires: ['key', 'secret', 'username'],
     fetchTimespan: 60,

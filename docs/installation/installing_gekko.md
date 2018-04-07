@@ -20,18 +20,16 @@ Gekko requires [nodejs](https://nodejs.org/en/) to be installed. Go ahead and in
 
 ## Downloading Gekko
 
-The recommanded way of downloading Gekko is by using git. This makes keeping Gekko up to date a lot easier. Run this in a terminal:
+The recommanded way of downloading Gekko is by using git. This makes keeping Gekko updated a lot easier. For git, run this in a terminal:
 
-    git clone git://github.com/askmike/gekko.git -b stable
+    git clone git://github.com/askmike/gekko.git
     cd gekko
 
-This will download the latest stable version of Gekko, remove the final `-b stable` part to download the current latest release (which might not be as stable).
+Alternatively download and extract [the zip here](https://github.com/askmike/gekko/archive/stable.zip).
 
-Alternatively you can manually download the latest stable version of Gekko on the [releases page](https://github.com/askmike/gekko/releases).
+## Installing Gekko dependencies
 
-## Installing Gekko's dependencies
-
-Once you have Gekko downloaded you need to install the dependencies, open your terminal and navigate to the gekko folder and run:
+Once it is installed we need to install Gekko's dependencies, open your terminal and navigate to the gekko folder and run:
 
     npm install --only=production
 
@@ -48,4 +46,4 @@ If you installed Gekko via git, simply run:
     git pull
     npm install --only=production
 
-If you downloaded the zip you can just download the new version. If you want to move historical data over (for backtesting purposes), copy the contents of the `history` folder found inside the gekko folder. If you have written your own strategies, don't forget to move them over as well.
+If you downloaded the zip you can just download the new version. If you want to move historical data over (for backtesting purposes), copy the constents of the `history` folder found inside the gekko folder. If you have written your own strategies, don't forget to move them over as well.

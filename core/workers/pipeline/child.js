@@ -28,8 +28,11 @@ var start = (mode, config) => {
 
   var dirs = util.dirs();
 
-  // force correct gekko mode & config
+  // force correct gekko mode
   util.setGekkoMode(mode);
+
+  // force disable debug
+  config.debug = false;
   util.setConfig(config);
 
   var pipeline = require(dirs.core + 'pipeline');
@@ -44,12 +47,4 @@ process.send('ready');
 process.on('message', function(m) {
   if(m.what === 'start')
     start(m.mode, m.config);
-
-  if(m.what === 'exit')
-    process.exit(0);
 });
-
-process.on('disconnect', function() {
-  console.log("disconnect");
-  process.exit(-1);
-})

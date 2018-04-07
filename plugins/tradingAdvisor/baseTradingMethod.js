@@ -1,57 +1,94 @@
 var _ = require('lodash');
-var fs = require('fs');
 var util = require('../../core/util');
 var config = util.getConfig();
 var dirs = util.dirs();
 var log = require(dirs.core + 'log');
+var cp = require(dirs.core + 'cp');
 
 var ENV = util.gekkoEnv();
 var mode = util.gekkoMode();
 var startTime = util.getStartTime();
 
-var talib = require(dirs.core + 'talib');
-if(talib == null) {
-  log.warn('TALIB indicators could not be loaded, they will be unavailable.');
-}
+if(config.tradingAdvisor.talib.enabled) {
+  // verify talib is installed properly
+  var pluginHelper = require(dirs.core + 'pluginUtil');
+  var pluginMock = {
+    slug: 'tradingAdvisor',
+    dependencies: [{
+      module: 'talib',
+      version: config.tradingAdvisor.talib.version
+    }]
+  };
 
-var tulind = require(dirs.core + 'tulind');
-if(tulind == null) {
-  log.warn('TULIP indicators could not be loaded, they will be unavailable.');
+  var cannotLoad = pluginHelper.cannotLoad(pluginMock);
+  if(cannotLoad)
+    util.die(cannotLoad);
+
+  var talib = require(dirs.core + 'talib');
 }
 
 var indicatorsPath = dirs.methods + 'indicators/';
-var indicatorFiles = fs.readdirSync(indicatorsPath);
-var Indicators = {};
 
-_.each(indicatorFiles, function(indicator) {
-  const indicatorName = indicator.split(".")[0];
-  if (indicatorName[0] != "_")
-    try {
-      Indicators[indicatorName] = require(indicatorsPath + indicator);
-    } catch (e) {
-      log.error("Failed to load indicator", indicatorName);
-    }
-});
+var Indicators = {
+  MACD: {
+    factory: require(indicatorsPath + 'MACD'),
+    input: 'price'
+  },
+  EMA: {
+    factory: require(indicatorsPath + 'EMA'),
+    input: 'price'
+  },
+  DEMA: {
+    factory: require(indicatorsPath + 'DEMA'),
+    input: 'price'
+  },
+  PPO: {
+    factory: require(indicatorsPath + 'PPO'),
+    input: 'price'
+  },
+  LRC: {
+    factory: require(indicatorsPath + 'LRC'),
+    input: 'price'
+  },
+  SMA: {
+    factory: require(indicatorsPath + 'SMA'),
+    input: 'price'
+  },
+
+  RSI: {
+    factory: require(indicatorsPath + 'RSI'),
+    input: 'candle'
+  },
+  TSI: {
+    factory: require(indicatorsPath + 'TSI'),
+    input: 'candle'
+  },
+  UO: {
+    factory: require(indicatorsPath + 'UO'),
+    input: 'candle'
+  },
+  CCI: {
+    factory: require(indicatorsPath + 'CCI'),
+    input: 'candle'
+  }
+};
 
 var allowedIndicators = _.keys(Indicators);
 var allowedTalibIndicators = _.keys(talib);
-var allowedTulipIndicators = _.keys(tulind);
 
-var Base = function(settings) {
+var Base = function() {
   _.bindAll(this);
 
   // properties
   this.age = 0;
   this.processedTicks = 0;
   this.setup = false;
-  this.settings = settings;
-  this.tradingAdvisor = config.tradingAdvisor;
+
   // defaults
   this.requiredHistory = 0;
   this.priceValue = 'close';
   this.indicators = {};
   this.talibIndicators = {};
-  this.tulipIndicators = {};
   this.asyncTick = false;
   this.candlePropsCacheSize = 1000;
   this.deferredTicks = [];
@@ -63,9 +100,7 @@ var Base = function(settings) {
     high: [],
     low: [],
     close: [],
-    volume: [],
-    vwp: [],
-    trades: []
+    volume: []
   };
 
   // make sure we have all methods
@@ -77,12 +112,6 @@ var Base = function(settings) {
   if(!this.update)
     this.update = function() {};
 
-  if(!this.end)
-    this.end = function() {};
-
-  if(!this.onTrade)
-    this.onTrade = function() {};
-
   // let's run the implemented starting point
   this.init();
 
@@ -91,7 +120,7 @@ var Base = function(settings) {
 
   this.setup = true;
 
-  if(_.size(this.talibIndicators) || _.size(this.tulipIndicators))
+  if(_.size(this.talibIndicators))
     this.asyncTick = true;
 
   if(_.size(this.indicators))
@@ -125,8 +154,6 @@ Base.prototype.tick = function(candle) {
     this.candleProps.low.push(candle.low);
     this.candleProps.close.push(candle.close);
     this.candleProps.volume.push(candle.volume);
-    this.candleProps.vwp.push(candle.vwp);
-    this.candleProps.trades.push(candle.trades);
 
     if(this.age > this.candlePropsCacheSize) {
       this.candleProps.open.shift();
@@ -134,8 +161,6 @@ Base.prototype.tick = function(candle) {
       this.candleProps.low.shift();
       this.candleProps.close.shift();
       this.candleProps.volume.shift();
-      this.candleProps.vwp.shift();
-      this.candleProps.trades.shift();
     }
   }
 
@@ -154,7 +179,7 @@ Base.prototype.tick = function(candle) {
   } else {
 
     var next = _.after(
-      _.size(this.talibIndicators) + _.size(this.tulipIndicators),
+      _.size(this.talibIndicators),
       () => this.propogateTick(candle)
     );
 
@@ -176,25 +201,6 @@ Base.prototype.tick = function(candle) {
       indicator => indicator.run(
         basectx.candleProps,
         talibResultHander.bind(indicator)
-      )
-    );
-
-    // handle result from tulip
-    var tulindResultHander = function(err, result) {
-      if(err)
-        util.die('TULIP ERROR:', err);
-
-      // fn is bound to indicator
-      this.result = _.mapValues(result, v => _.last(v));
-      next(candle);
-    }
-
-    // handle result from tulip indicators
-    _.each(
-      this.tulipIndicators,
-      indicator => indicator.run(
-        basectx.candleProps,
-        tulindResultHander.bind(indicator)
       )
     );
   }
@@ -226,23 +232,46 @@ Base.prototype.propogateTick = function(candle) {
   // than minimally needed. In that case check
   // whether candle start time is > startTime
   var isPremature;
-
-  if(mode === 'realtime'){
-    // Subtract number of minutes in current candle for instant start
-    let startTimeMinusCandleSize = startTime.clone();
-    startTimeMinusCandleSize.subtract(this.tradingAdvisor.candleSize, "minutes"); 
-    
-    isPremature = candle.start < startTimeMinusCandleSize;
-  }
-  else{
+  if(mode === 'realtime')
+    isPremature = candle.start < startTime;
+  else
     isPremature = false;
-  }
 
   if(isAllowedToCheck && !isPremature) {
     this.log(candle);
     this.check(candle);
   }
   this.processedTicks++;
+
+ // emit for UI
+  if (this.tickResult) {
+    cp.strategyResult({
+      name: this.name,
+      date: candle.start,
+      result: this.tickResult
+    });
+  }
+
+  _.each(this.indicators, (indicator, name) => {
+    cp.indicatorResult({
+      name,
+      type: indicator.type,
+      talib: false,
+      date: candle.start,
+      result: indicator.result
+    });
+  })
+
+  _.each(this.talibIndicators, (talibIndicator, name) => {
+    // console.log('talibIndicator', talibIndicator)
+    cp.indicatorResult({
+      name,
+      talib: true,
+      type: talibIndicator.type,
+      date: candle.start,
+      result: talibIndicator.result
+    });
+  })
 
   if(
     this.asyncTick &&
@@ -258,10 +287,6 @@ Base.prototype.propogateTick = function(candle) {
     this.finishCb();
 }
 
-Base.prototype.processTrade = function(trade) {
-  this.onTrade(trade);
-}
-
 Base.prototype.addTalibIndicator = function(name, type, parameters) {
   if(!talib)
     util.die('Talib is not enabled');
@@ -275,25 +300,8 @@ Base.prototype.addTalibIndicator = function(name, type, parameters) {
   var basectx = this;
 
   this.talibIndicators[name] = {
+    type,
     run: talib[type].create(parameters),
-    result: NaN
-  }
-}
-
-Base.prototype.addTulipIndicator = function(name, type, parameters) {
-  if(!tulind)
-  util.die('Tulip indicators is not enabled');
-
-  if(!_.contains(allowedTulipIndicators, type))
-    util.die('I do not know the tulip indicator ' + type);
-
-  if(this.setup)
-    util.die('Can only add tulip indicators in the init method!');
-
-  var basectx = this;
-
-  this.tulipIndicators[name] = {
-    run: tulind[type].create(parameters),
     result: NaN
   }
 }
@@ -305,9 +313,11 @@ Base.prototype.addIndicator = function(name, type, parameters) {
   if(this.setup)
     util.die('Can only add indicators in the init method!');
 
-  return this.indicators[name] = new Indicators[type](parameters);
+  this.indicators[name] = new Indicators[type].factory(parameters);
+  this.indicators[name].type = type;
 
   // some indicators need a price stream, others need full candles
+  this.indicators[name].input = Indicators[type].input;
 }
 
 Base.prototype.advice = function(newPosition, _candle) {
@@ -328,26 +338,24 @@ Base.prototype.advice = function(newPosition, _candle) {
 
   this._prevAdvice = newPosition;
 
-  this.emit('advice', {
-    recommendation: newPosition,
-    portfolio: 1,
-    candle
-  });
+  _.defer(function() {
+    this.emit('advice', {
+      recommendation: newPosition,
+      portfolio: 1,
+      candle
+    });
+  }.bind(this));
 }
 
 // Because the trading method might be async we need
 // to be sure we only stop after all candles are
 // processed.
 Base.prototype.finish = function(done) {
-  if(!this.asyncTick) {
-    this.end();
+  if(!this.asyncTick)
     return done();
-  }
 
-  if(this.age === this.processedTicks) {
-    this.end();
+  if(this.age === this.processedTicks)
     return done();
-  }
 
   // we are not done, register cb
   // and call after we are..

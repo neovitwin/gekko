@@ -238,7 +238,7 @@ Trader.getCapabilities = function () {
     currencies: ['BTC', 'ETH', 'XMR', 'USDT'],
     assets: [
       '1CR', 'ABY', 'AC', 'ACH', 'ADN', 'AEON', 'AERO', 'AIR', 'AMP', 'APH',
-      'ARCH', 'AUR', 'AXIS', 'BALLS', 'BANK', 'BBL', 'BBR', 'BCC', 'BCH', 'BCN',
+      'ARCH', 'AUR', 'AXIS', 'BALLS', 'BANK', 'BBL', 'BBR', 'BCC', 'BCN',
       'BCY', 'BDC', 'BDG', 'BELA', 'BITCNY', 'BITS', 'BITUSD', 'BLK', 'BLOCK',
       'BLU', 'BNS', 'BONES', 'BOST', 'BTC', 'BTCD', 'BTCS', 'BTM', 'BTS',
       'BURN', 'BURST', 'C2', 'CACH', 'CAI', 'CC', 'CCN', 'CGA', 'CHA', 'CINNI',
@@ -265,7 +265,7 @@ Trader.getCapabilities = function () {
       'UVC', 'VIA', 'VOOT', 'VOX', 'VRC', 'VTC', 'WC', 'WDC', 'WIKI', 'WOLF',
       'X13', 'XAI', 'XAP', 'XBC', 'XC', 'XCH', 'XCN', 'XCP', 'XCR', 'XDN',
       'XDP', 'XEM', 'XHC', 'XLB', 'XMG', 'XMR', 'XPB', 'XPM', 'XRP', 'XSI',
-      'XST', 'XSV', 'XUSD', 'XVC', 'XXC', 'BCH', 'YACC', 'YANG', 'YC', 'YIN', 'ZEC'
+      'XST', 'XSV', 'XUSD', 'XVC', 'XXC', 'YACC', 'YANG', 'YC', 'YIN', 'ZEC'
     ],
     markets: [
       // *** BTC <-> XXX
@@ -288,7 +288,6 @@ Trader.getCapabilities = function () {
       { pair: ['BTC', 'BBR'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['BTC', 'BCC'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['BTC', 'BCN'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
-      { pair: ['BTC', 'BCH'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['BTC', 'BCY'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['BTC', 'BDC'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['BTC', 'BDG'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
@@ -552,7 +551,6 @@ Trader.getCapabilities = function () {
 
       // *** USDT <-> XXX
       { pair: ['USDT', 'BTC'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
-      { pair: ['USDT', 'BCH'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['USDT', 'DASH'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['USDT', 'ETC'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['USDT', 'ETH'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
@@ -566,7 +564,6 @@ Trader.getCapabilities = function () {
 
       // *** ETH <-> XXX
       { pair: ['ETH', 'ETC'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
-      { pair: ['ETH', 'BCH'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['ETH', 'GNO'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['ETH', 'GNT'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
       { pair: ['ETH', 'LSK'], minimalOrder: { amount: 0.0001, unit: 'asset' } },
